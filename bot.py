@@ -137,7 +137,7 @@ if __name__ == "__main__":
     if not CHANNEL_ID:
         raise ValueError("❌ CHANNEL_ID غير موجود! أضفه في متغيرات البيئة.")
 
-    # asyncio.run(send_test())
+     asyncio.run(send_test())
 
     log.info("🚀 البوت شغّال...")
     run_scheduler()
