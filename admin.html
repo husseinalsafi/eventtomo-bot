@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>يحدث غداً — لوحة الإدارة</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --border: #1e2d45;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #10b981;
+    --error: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 20%, #1e3a5f22 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #0e4a6622 0%, transparent 60%);
+  }
+
+  header {
+    padding: 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: #0d1525cc;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header .logo {
+    font-size: 1.8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  header .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+  /* Setup Section */
+  .setup-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .setup-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, #3b82f611, transparent 70%);
+    pointer-events: none;
+  }
+
+  .setup-card h2 {
+    font-size: 1rem;
+    color: var(--muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  @media (max-width: 600px) { .setup-grid { grid-template-columns: 1fr; } }
+
+  /* Form */
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-card h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+  .field.full { grid-column: 1 / -1; }
+
+  label { font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+
+  input, select {
+    background: #0a0e1a;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px #3b82f620;
+  }
+
+  select option { background: #111827; }
+
+  .emoji-preview {
+    font-size: 2rem;
+    text-align: center;
+    padding: 0.5rem;
+    background: #0a0e1a;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-add {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 1.5rem;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .btn-add:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-add:active { transform: translateY(0); }
+  .btn-add:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--success);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    font-weight: 700;
+    transition: transform 0.3s;
+    z-index: 100;
+    white-space: nowrap;
+  }
+
+  .toast.error { background: var(--error); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* Days List */
+  .days-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+  }
+
+  .days-card h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .days-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .day-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #0a0e1a;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    transition: border-color 0.2s;
+  }
+
+  .day-item:hover { border-color: var(--accent); }
+
+  .day-emoji { font-size: 1.5rem; min-width: 2rem; text-align: center; }
+
+  .day-info { flex: 1; }
+  .day-name { font-weight: 600; font-size: 0.95rem; }
+  .day-date { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; }
+
+  .day-tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .tag-international { background: #1e3a5f; color: #60a5fa; }
+  .tag-iraqi { background: #1a3320; color: #4ade80; }
+  .tag-custom { background: #2d1b4e; color: #c084fc; }
+
+  .btn-delete {
+    background: none;
+    border: 1px solid #ef444440;
+    color: var(--error);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background 0.2s;
+  }
+
+  .btn-delete:hover { background: #ef444420; }
+
+  .month-names {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .empty { text-align: center; color: var(--muted); padding: 2rem; }
+
+  .filter-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: 'Cairo', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .save-btn {
+    padding: 0.5rem 1.2rem;
+    background: var(--success);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Cairo', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+  }
+
+  .save-btn:hover { opacity: 0.85; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">📅 يحدث غداً</div>
+    <div class="subtitle">لوحة إدارة الأيام</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- إعدادات GitHub -->
+  <div class="setup-card">
+    <h2>⚙️ إعدادات GitHub (مرة وحدة فقط)</h2>
+    <div class="setup-grid">
+      <div class="field">
+        <label>GitHub Token</label>
+        <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" />
+      </div>
+      <div class="field">
+        <label>اسم المستخدم / الريبو</label>
+        <input type="text" id="gh-repo" value="husseinalsafi/eventtomo-bot" />
+      </div>
+    </div>
+  </div>
+
+  <!-- إضافة يوم -->
+  <div class="form-card">
+    <h2>➕ إضافة يوم جديد</h2>
+    <div class="form-grid">
+      <div class="field full">
+        <label>اسم اليوم</label>
+        <input type="text" id="day-name" placeholder="مثال: اليوم العالمي للبيئة" />
+      </div>
+      <div class="field">
+        <label>الشهر</label>
+        <select id="day-month">
+          <option value="1">يناير</option>
+          <option value="2">فبراير</option>
+          <option value="3">مارس</option>
+          <option value="4">أبريل</option>
+          <option value="5" selected>مايو</option>
+          <option value="6">يونيو</option>
+          <option value="7">يوليو</option>
+          <option value="8">أغسطس</option>
+          <option value="9">سبتمبر</option>
+          <option value="10">أكتوبر</option>
+          <option value="11">نوفمبر</option>
+          <option value="12">ديسمبر</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>اليوم</label>
+        <input type="number" id="day-num" min="1" max="31" placeholder="1-31" />
+      </div>
+      <div class="field">
+        <label>الإيموجي</label>
+        <input type="text" id="day-emoji" placeholder="🌍" maxlength="4" oninput="updatePreview()" />
+      </div>
+      <div class="field">
+        <label>معاينة</label>
+        <div class="emoji-preview" id="emoji-preview">🌍</div>
+      </div>
+      <div class="field full">
+        <label>النوع</label>
+        <select id="day-type">
+          <option value="international_days">🌍 يوم عالمي (UN)</option>
+          <option value="iraqi_national_days">🇮🇶 يوم وطني عراقي</option>
+          <option value="custom_days">📌 مناسبة خاصة</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn-add" onclick="addDay()">➕ إضافة اليوم</button>
+  </div>
+
+  <!-- قائمة الأيام -->
+  <div class="days-card">
+    <h2>
+      <span>📋 الأيام المسجّلة</span>
+      <button class="save-btn" onclick="saveToGitHub()">💾 حفظ على GitHub</button>
+    </h2>
+
+    <div class="filter-tabs">
+      <button class="tab active" onclick="filterDays('all', this)">الكل</button>
+      <button class="tab" onclick="filterDays('international_days', this)">🌍 عالمي</button>
+      <button class="tab" onclick="filterDays('iraqi_national_days', this)">🇮🇶 عراقي</button>
+      <button class="tab" onclick="filterDays('custom_days', this)">📌 خاص</button>
+    </div>
+
+    <div class="days-list" id="days-list">
+      <div class="empty">⏳ جاري تحميل الأيام...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let daysData = null;
+let currentFilter = 'all';
+
+const MONTHS = ['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+function updatePreview() {
+  const v = document.getElementById('day-emoji').value;
+  document.getElementById('emoji-preview').textContent = v || '🌍';
+}
+
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (error ? ' error' : '') + ' show';
+  setTimeout(() => t.className = 'toast' + (error ? ' error' : ''), 3000);
+}
+
+async function loadDays() {
+  const repo = document.getElementById('gh-repo').value || 'husseinalsafi/eventtomo-bot';
+  try {
+    const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/days.json?t=${Date.now()}`);
+    daysData = await res.json();
+    renderDays();
+  } catch(e) {
+    document.getElementById('days-list').innerHTML = '<div class="empty">❌ تأكد من اسم الريبو وحاول مرة ثانية</div>';
+  }
+}
+
+function renderDays() {
+  if (!daysData) return;
+  const list = document.getElementById('days-list');
+  
+  let all = [];
+  ['international_days','iraqi_national_days','custom_days'].forEach(cat => {
+    (daysData[cat] || []).forEach(d => all.push({...d, _cat: cat}));
+  });
+
+  if (currentFilter !== 'all') all = all.filter(d => d._cat === currentFilter);
+  all.sort((a,b) => a.month - b.month || a.day - b.day);
+
+  if (!all.length) { list.innerHTML = '<div class="empty">لا توجد أيام</div>'; return; }
+
+  const tagMap = {
+    international_days: ['tag-international','🌍 عالمي'],
+    iraqi_national_days: ['tag-iraqi','🇮🇶 عراقي'],
+    custom_days: ['tag-custom','📌 خاص']
+  };
+
+  list.innerHTML = all.map((d,i) => {
+    const [tagClass, tagLabel] = tagMap[d._cat];
+    return `
+    <div class="day-item">
+      <div class="day-emoji">${d.emoji}</div>
+      <div class="day-info">
+        <div class="day-name">${d.name}</div>
+        <div class="day-date">${d.day} ${MONTHS[d.month]}</div>
+      </div>
+      <span class="day-tag ${tagClass}">${tagLabel}</span>
+      <button class="btn-delete" onclick="deleteDay('${d._cat}', ${d.month}, ${d.day})">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function filterDays(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderDays();
+}
+
+function addDay() {
+  if (!daysData) { showToast('❌ حمّل البيانات أولاً', true); return; }
+
+  const name  = document.getElementById('day-name').value.trim();
+  const month = parseInt(document.getElementById('day-month').value);
+  const day   = parseInt(document.getElementById('day-num').value);
+  const emoji = document.getElementById('day-emoji').value.trim() || '📅';
+  const type  = document.getElementById('day-type').value;
+
+  if (!name || !day || day < 1 || day > 31) {
+    showToast('❌ أكمل جميع الحقول', true); return;
+  }
+
+  daysData[type].push({ month, day, name, emoji });
+  daysData[type].sort((a,b) => a.month - b.month || a.day - b.day);
+
+  document.getElementById('day-name').value = '';
+  document.getElementById('day-num').value = '';
+  document.getElementById('day-emoji').value = '';
+  document.getElementById('emoji-preview').textContent = '🌍';
+
+  renderDays();
+  showToast('✅ تم الإضافة — اضغط "حفظ على GitHub" لحفظ التغييرات');
+}
+
+function deleteDay(cat, month, day) {
+  if (!daysData) return;
+  daysData[cat] = daysData[cat].filter(d => !(d.month === month && d.day === day));
+  renderDays();
+  showToast('🗑️ تم الحذف — اضغط "حفظ على GitHub" لحفظ التغييرات');
+}
+
+async function saveToGitHub() {
+  const token = document.getElementById('gh-token').value.trim();
+  const repo  = document.getElementById('gh-repo').value.trim();
+
+  if (!token) { showToast('❌ أدخل GitHub Token أولاً', true); return; }
+  if (!daysData) { showToast('❌ لا توجد بيانات للحفظ', true); return; }
+
+  try {
+    // احصل على SHA الملف الحالي
+    const fileRes = await fetch(`https://api.github.com/repos/${repo}/contents/days.json`, {
+      headers: { Authorization: `token ${token}` }
+    });
+    const fileData = await fileRes.json();
+    const sha = fileData.sha;
+
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(daysData, null, 2))));
+
+    const updateRes = await fetch(`https://api.github.com/repos/${repo}/contents/days.json`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `token ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: 'تحديث قاعدة بيانات الأيام',
+        content,
+        sha
+      })
+    });
+
+    if (updateRes.ok) {
+      showToast('✅ تم الحفظ على GitHub بنجاح!');
+    } else {
+      const err = await updateRes.json();
+      showToast('❌ ' + (err.message || 'خطأ في الحفظ'), true);
+    }
+  } catch(e) {
+    showToast('❌ خطأ في الاتصال', true);
+  }
+}
+
+// تحميل البيانات عند فتح الصفحة
+window.onload = loadDays;
+</script>
+</body>
+</html>
