@@ -60,8 +60,8 @@ def build_message(events, event_date):
         lines.append(ev['emoji'] + " " + ev['name'])
         lines.append("   " + tag + "\n")
 
-    lines.append("─────────────────")
-    lines.append("تابعونا للمزيد من المناسبات")
+    lines.append("──────────────")
+    lines.append("@mr_alsafi")
     return "\n".join(lines)
 
 
