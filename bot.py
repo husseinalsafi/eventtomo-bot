@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import pytz
 import time
 from telegram import Bot
-from telegram.constants import ParseMode
 
 BOT_TOKEN   = os.environ.get("BOT_TOKEN", "")
 CHANNEL_ID  = os.environ.get("CHANNEL_ID", "")
@@ -29,8 +28,9 @@ def load_days():
 
 def get_events_for_date(month, day):
     data = load_days()
+    # الترتيب: عراقي/خاص اولا ثم عالمي
     events = []
-    for category in ["international_days", "iraqi_national_days", "custom_days"]:
+    for category in ["iraqi_national_days", "custom_days", "international_days"]:
         for item in data.get(category, []):
             if item["month"] == month and item["day"] == day:
                 item["_category"] = category
@@ -38,16 +38,21 @@ def get_events_for_date(month, day):
     return events
 
 
-def build_message(events, event_date):
+def build_message(events, target_date, days_ahead):
     month_map = {
         1:"يناير", 2:"فبراير", 3:"مارس",    4:"ابريل",
         5:"مايو",  6:"يونيو",  7:"يوليو",   8:"اغسطس",
         9:"سبتمبر",10:"اكتوبر",11:"نوفمبر",12:"ديسمبر"
     }
-    day_str   = str(event_date.day)
-    month_str = month_map[event_date.month]
+    day_str   = str(target_date.day)
+    month_str = month_map[target_date.month]
 
-    lines = ["تذكير - غدا " + day_str + " " + month_str + "\n"]
+    if days_ahead == 1:
+        header = "تذكير - غدا " + day_str + " " + month_str
+    else:
+        header = "تذكير - بعد الغد " + day_str + " " + month_str
+
+    lines = [header + "\n"]
 
     for ev in events:
         cat = ev.get("_category", "")
@@ -61,27 +66,33 @@ def build_message(events, event_date):
         lines.append("   " + tag + "\n")
 
     lines.append("──────────────")
-    lines.append("@mr_alsafi")
+    lines.append(os.environ.get("CHANNEL_USERNAME", "@EventTomo"))
     return "\n".join(lines)
 
 
-async def send_notification():
+async def send_for_day(bot, days_ahead):
     tz = pytz.timezone(TIMEZONE)
     now = datetime.now(tz)
-    tomorrow = now + timedelta(days=1)
-    events = get_events_for_date(tomorrow.month, tomorrow.day)
+    target = now + timedelta(days=days_ahead)
+    events = get_events_for_date(target.month, target.day)
 
     if not events:
-        log.info(f"لا توجد احداث غدا ({tomorrow.day}/{tomorrow.month})")
+        log.info(f"لا احداث بعد {days_ahead} يوم ({target.day}/{target.month})")
         return
 
-    message = build_message(events, tomorrow)
-    bot = Bot(token=BOT_TOKEN)
+    message = build_message(events, target, days_ahead)
     try:
         await bot.send_message(chat_id=CHANNEL_ID, text=message)
-        log.info(f"تم الارسال - {len(events)} حدث")
+        log.info(f"تم ارسال تنبيه {days_ahead} يوم - {len(events)} حدث")
     except Exception as e:
         log.error(f"خطا في الارسال: {e}")
+
+
+async def send_notifications():
+    bot = Bot(token=BOT_TOKEN)
+    # ارسل تنبيه غد (يوم 1) وبعد الغد (يوم 2)
+    await send_for_day(bot, 1)
+    await send_for_day(bot, 2)
 
 
 def run_scheduler():
@@ -100,7 +111,7 @@ def run_scheduler():
 
         if now.hour == NOTIFY_HOUR and not sent_today:
             log.info(f"الساعة {NOTIFY_HOUR} - جاري الارسال...")
-            asyncio.run(send_notification())
+            asyncio.run(send_notifications())
             sent_today = True
 
         log.info(f"الوقت: {now.strftime('%H:%M')} - انتظر الساعة {NOTIFY_HOUR:02d}:00")
