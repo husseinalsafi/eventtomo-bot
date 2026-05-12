@@ -783,6 +783,12 @@
       "name": "اليوم الدولي للتضامن الإنساني",
       "emoji": "🤝",
       "source": "UN"
+    },
+    {
+      "month": 12,
+      "day": 25,
+      "name": "اعياد الميلاد",
+      "emoji": "📅"
     }
   ],
   "iraqi_national_days": [
