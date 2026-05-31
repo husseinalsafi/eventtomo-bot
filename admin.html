@@ -375,7 +375,7 @@
   <div class="days-card">
     <h2>
       <span>📋 الأيام المسجّلة</span>
-      <button class="save-btn" onclick="saveToGitHub()">💾 حفظ على GitHub</button>
+      <button class="save-btn" onclick="saveAll()">💾 حفظ</button>
     </h2>
 
     <div class="filter-tabs">
@@ -415,11 +415,11 @@ function showToast(msg, error = false) {
 async function loadDays() {
   const repo = document.getElementById('gh-repo').value || 'husseinalsafi/eventtomo-bot';
   try {
-    const res = await fetch(`https://raw.githubusercontent.com/${repo}/main/days.json?t=${Date.now()}`);
+    console.log('Fetching days...'); const res = await fetch('/eventtomo/api/days?key=et2026'); console.log('Response:', res.status);
     daysData = await res.json();
     renderDays();
   } catch(e) {
-    document.getElementById('days-list').innerHTML = '<div class="empty">❌ تأكد من اسم الريبو وحاول مرة ثانية</div>';
+    document.getElementById('days-list').innerHTML = '<div class="empty">❌ خطأ: ' + e.message + '</div>';
   }
 }
 
@@ -497,7 +497,19 @@ function deleteDay(cat, month, day) {
   showToast('🗑️ تم الحذف — اضغط "حفظ على GitHub" لحفظ التغييرات');
 }
 
+async function saveAll() {
+    await fetch('/eventtomo/api/save?key=et2026', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(daysData)});
+    const r = await fetch('/eventtomo/api/backup?key=et2026', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(daysData)});
+    const result = await r.json();
+    if(result.ok) alert('✅ تم الحفظ على السيرفر وGitHub');
+    else alert('✅ تم الحفظ على السيرفر\n⚠️ GitHub: ' + result.error);
+}
 async function saveToGitHub() {
+    // حفظ مؤقت على السيرفر
+    await fetch('/eventtomo/api/save?key=et2026', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(daysData)});
+    alert('✅ تم الحفظ المؤقت على السيرفر');
+}
+async function backupToGitHub() {
   const token = document.getElementById('gh-token').value.trim();
   const repo  = document.getElementById('gh-repo').value.trim();
 
@@ -506,6 +518,12 @@ async function saveToGitHub() {
 
   try {
     // احصل على SHA الملف الحالي
+    const r = await fetch('/eventtomo/api/backup?key=et2026', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(daysData)});
+    const result = await r.json();
+    if(result.ok) alert('✅ ' + result.msg);
+    else alert('❌ ' + result.error);
+}
+async function _old_github() {
     const fileRes = await fetch(`https://api.github.com/repos/${repo}/contents/days.json`, {
       headers: { Authorization: `token ${token}` }
     });
